@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestion Qualité — ENSIT Junior Entreprise</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --maroon:#732436;--maroon-dark:#561c29;--maroon-light:#f7edef;
+  --ink:#1e1e1e;--muted:#6b6b6b;--line:#e3dadb;--paper:#fbf9f8;--card:#fff;
+  --open:#f8cbad;--progress:#ffe699;--closed:#c6e0b4;--cancelled:#d9d9d9;
+  --green:#3c7d44;--blue:#1a5fa8;--gold:#f0a500;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+
+/* LOADING */
+#overlay{position:fixed;inset:0;background:rgba(83,20,36,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;gap:14px;}
+#overlay.hidden{display:none;}
+.spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+#overlay p{font-size:14px;font-weight:600;opacity:.85;}
+
+/* SERVER BAR */
+#srv-bar{background:#fff8e1;border-bottom:2px solid var(--gold);padding:9px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;}
+#srv-bar input{padding:6px 10px;border:1.5px solid #ccc;border-radius:6px;font-size:13px;width:280px;font-family:inherit;}
+#srv-bar input:focus{outline:2px solid var(--maroon);}
+.b-cfg{background:var(--maroon);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
+.b-cfg:hover{background:var(--maroon-dark);}
+#srv-st{font-weight:700;}
+#srv-st.ok{color:var(--green);}
+#srv-st.err{color:#c00;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--maroon-dark),var(--maroon) 60%,#a8324a);padding:20px;}
+.lbox{background:#fff;border-radius:16px;padding:38px 34px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.llogo{text-align:center;margin-bottom:26px;}
+.llogo .emb{width:62px;height:62px;background:var(--maroon);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:27px;}
+.llogo h1{color:var(--maroon);font-size:19px;font-weight:800;}
+.llogo p{color:var(--muted);font-size:12px;margin-top:3px;font-style:italic;}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.rb{border:2px solid var(--line);background:#fff;border-radius:10px;padding:13px 8px;cursor:pointer;text-align:center;transition:.15s;}
+.rb:hover,.rb.sel{border-color:var(--maroon);background:var(--maroon-light);}
+.rb .ri{font-size:25px;margin-bottom:4px;}
+.rb .rl{font-size:13px;font-weight:700;}
+.rb .rd{font-size:11px;color:var(--muted);margin-top:2px;}
+.lf{margin-bottom:13px;}
+.lf label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;}
+.lf input{width:100%;padding:10px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:14px;font-family:inherit;}
+.lf input:focus{outline:2px solid var(--maroon);border-color:var(--maroon);}
+.lerr{background:#fdf0f2;border:1px solid #f5bfc7;color:#8b1a2b;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none;}
+.lerr.show{display:block;}
+.bln{width:100%;background:var(--maroon);color:#fff;border:none;padding:13px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer;}
+.bln:hover{background:var(--maroon-dark);}
+#ap-row{display:none;}
+
+/* APP */
+#app{display:none;}
+.app{max-width:980px;margin:0 auto;padding:0 16px 60px;}
+.banner{background:var(--maroon);color:#fff;padding:18px 20px;border-radius:0 0 12px 12px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.banner h1{font-size:20px;letter-spacing:.3px;}
+.banner p{font-size:12.5px;color:#f0d9de;font-style:italic;margin-top:3px;}
+.upill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
+.rtag{background:var(--gold);color:#222;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;text-transform:uppercase;}
+.rtag.u{background:#a8d8f0;color:#1a4060;}
+.blog{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;}
+.blog:hover{background:rgba(255,255,255,.22);}
+
+nav.tabs{display:flex;gap:4px;margin:14px 0 18px;border-bottom:2px solid var(--line);flex-wrap:wrap;}
+nav.tabs button{background:none;border:none;padding:10px 16px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;border-radius:6px 6px 0 0;}
+nav.tabs button:hover{background:#f1e8ea;color:var(--maroon);}
+nav.tabs button.active{color:var(--maroon);border-bottom-color:var(--maroon);}
+nav.tabs button.admin-tab{border-left:3px solid var(--gold);}
+
+.panel{display:none;}
+.panel.active{display:block;animation:fd .15s ease;}
+@keyframes fd{from{opacity:0;transform:translateY(3px)}to{opacity:1}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px;}
+.band{background:var(--maroon);color:#fff;font-weight:700;font-size:13.5px;padding:9px 14px;border-radius:7px;margin:6px 0 16px;}
+.band.gold{background:linear-gradient(90deg,#8b6914,var(--gold));color:#1a1a1a;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-weight:600;font-size:13px;margin-bottom:5px;}
+.field .hint{font-weight:400;color:var(--muted);font-size:12px;}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid #ccc;border-radius:7px;font-size:14px;font-family:inherit;background:#fff;}
+textarea{min-height:64px;resize:vertical;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--maroon);border-color:var(--maroon);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:2px 20px;margin-bottom:14px;}
+.checks label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:13.5px;padding:4px 0;cursor:pointer;}
+.checks input{width:auto;}
+.btn{background:var(--maroon);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;}
+.btn:hover{background:var(--maroon-dark);}
+.btn-g{background:transparent;color:var(--maroon);border:1px solid var(--maroon);}
+.btn-g:hover{background:#f1e8ea;}
+.btn-ok{background:var(--green);width:100%;padding:15px;font-size:15.5px;margin-top:6px;}
+.btn-ok:hover{background:#2e6135;}
+.btn-ok:disabled{background:#999;cursor:not-allowed;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{background:#1a1a1a;color:#fff;padding:8px 9px;text-align:left;position:sticky;top:0;}
+tbody td{padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top;}
+tbody tr:hover{background:#f7f2f3;}
+.tw{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:8px;max-height:480px;}
+.bs{padding:4px 8px;border-radius:14px;font-weight:700;font-size:12px;border:none;cursor:pointer;}
+.st-Ouvert{background:var(--open);}.st-En-cours{background:var(--progress);}
+.st-Clôturé{background:var(--closed);}.st-Annulé{background:var(--cancelled);}
+.db{background:none;border:none;color:#a33;cursor:pointer;font-size:15px;}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 24px;}
+.kpi{border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+.kpi .lab{background:#1a1a1a;color:#fff;font-size:12.5px;font-weight:700;padding:9px 12px;text-align:center;}
+.kpi .val{background:#f2f2f2;color:var(--maroon);font-size:30px;font-weight:800;text-align:center;padding:14px 0;}
+.quick{display:grid;gap:8px;margin-top:8px;}
+.quick a{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);padding:11px 14px;border-radius:8px;text-decoration:none;color:var(--maroon);font-weight:700;font-size:13.5px;}
+.quick a span.d{color:var(--muted);font-weight:400;font-style:italic;font-size:12.5px;}
+.quick a:hover{background:#f7f2f3;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.legend span{padding:5px 12px;border-radius:14px;font-size:12.5px;font-weight:700;}
+.empty{color:var(--muted);font-style:italic;font-size:13px;padding:14px 0;}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:13px 22px;border-radius:9px;font-weight:600;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transition:.25s;pointer-events:none;z-index:9998;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.err{background:#c00020;}
+.desc{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 4px;}
+.addbox{border:1px dashed var(--maroon);border-radius:10px;padding:16px;margin-top:10px;background:#fdf7f8;}
+.notice{border-radius:9px;padding:11px 15px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.notice.blue{background:#eef6fb;border:1px solid #b3d9ee;color:#1a4060;}
+.notice.gold{background:#fff9e6;border:1px solid #f0d070;color:#6b4d00;}
+.nbadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;flex-shrink:0;}
+.nbadge.b{background:var(--blue);color:#fff;}
+.nbadge.g{background:var(--gold);color:#333;}
+.row-mine{background:#f0f7ff !important;}
+.toolbar{display:flex;justify-content:flex-end;margin:-6px 0 10px;}
+@media(max-width:600px){.row2,.checks,.kpis,.roles{grid-template-columns:1fr;}.banner{flex-direction:column;align-items:flex-start;}}
+</style>
+</head>
+<body>
+
+<div id="overlay" class="hidden">
+  <div class="spin"></div>
+  <p id="ov-msg">Chargement...</p>
+</div>
+
+<!-- BARRE SERVEUR -->
+<div id="srv-bar">
+  <span>🔗 <b>URL du serveur :</b></span>
+  <input type="text" id="api-url" placeholder="https://votre-app.railway.app" value="http://localhost:3000">
+  <button class="b-cfg" onclick="testSrv()">Tester</button>
+  <span id="srv-st"></span>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="lbox">
+    <div class="llogo">
+      <div class="emb">🏫</div>
+      <h1>OUTIL DE GESTION QUALITÉ</h1>
+      <p>ENSIT Junior Entreprise</p>
+    </div>
+    <div class="roles">
+      <div class="rb sel" id="rb-user" onclick="selRole('user')">
+        <div class="ri">👤</div>
+        <div class="rl">Utilisateur</div>
+        <div class="rd">Soumettre NC / Réclamation</div>
+      </div>
+      <div class="rb" id="rb-admin" onclick="selRole('admin')">
+        <div class="ri">🛡️</div>
+        <div class="rl">Administrateur</div>
+        <div class="rd">Registres & Actions</div>
+      </div>
+    </div>
+    <div class="lf">
+      <label>Votre Nom et Prénom *</label>
+      <input type="text" id="l-name" placeholder="Ex. Ahmed Ben Salem">
+    </div>
+    <div id="ap-row" class="lf">
+      <label>Mot de passe administrateur *</label>
+      <input type="password" id="l-pass" placeholder="Mot de passe">
+    </div>
+    <div class="lerr" id="l-err"></div>
+    <button class="bln" onclick="doLogin()">Accéder à l'outil →</button>
+    <p style="font-size:11px;color:#aaa;text-align:center;margin-top:12px;">Mot de passe admin par défaut : <b>ensit2024</b></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="app">
+  <div class="banner">
+    <div>
+      <h1>OUTIL DE GESTION QUALITÉ</h1>
+      <p>ENSIT Junior Entreprise — Non-Conformités · Réclamations · Actions d'amélioration</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="upill">
+        <span id="b-name"></span>
+        <span class="rtag" id="b-role"></span>
+      </div>
+      <button class="blog" onclick="doLogout()">⏻ Déconnexion</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button data-tab="accueil" class="active">🏠 Accueil</button>
+    <button data-tab="nc" id="tab-nc">📋 Non-Conformités</button>
+    <button data-tab="recl" id="tab-recl">📣 Réclamations</button>
+    <button data-tab="act" class="admin-tab" id="tab-act">⚙️ Registre Actions</button>
+  </nav>
+
+  <!-- ── ACCUEIL ── -->
+  <section class="panel active" id="panel-accueil">
+    <div class="card">
+      <p class="desc" id="accueil-desc"></p>
+
+      <!-- KPIs admin -->
+      <div class="kpis" id="kpis" style="display:none;">
+        <div class="kpi"><div class="lab">NC ouvertes / en cours</div><div class="val" id="kpi-nc">—</div></div>
+        <div class="kpi"><div class="lab">Réclamations ouvertes / en cours</div><div class="val" id="kpi-recl">—</div></div>
+        <div class="kpi"><div class="lab">Actions ouvertes / en cours</div><div class="val" id="kpi-act">—</div></div>
+        <div class="kpi"><div class="lab">Actions en retard</div><div class="val" id="kpi-late">—</div></div>
+      </div>
+
+      <div class="band">ACCÈS RAPIDE</div>
+      <div class="quick" id="quick-links"></div>
+
+      <div class="band" style="margin-top:22px;">LÉGENDE DES STATUTS</div>
+      <div class="legend">
+        <span class="st-Ouvert">Ouvert</span>
+        <span class="st-En-cours">En cours</span>
+        <span class="st-Clôturé">Clôturé</span>
+        <span class="st-Annulé">Annulé</span>
+      </div>
+      <div class="toolbar" style="margin-top:18px;" id="export-row" style="display:none;">
+        <button class="btn btn-g" id="export-btn">⭳ Exporter tout en Excel (.xlsx)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NON-CONFORMITÉS ── -->
+  <section class="panel" id="panel-nc">
+
+    <!-- Formulaire — uniquement pour utilisateur -->
+    <div class="card" id="nc-form-card">
+      <div class="band">CHARGÉ DE TRAITEMENT DE LA NON-CONFORMITÉ</div>
+      <div class="row2">
+        <div class="field"><label>Date d'ouverture *</label><input type="date" id="nc-date"></div>
+        <div class="field"><label>Fonction / Statut</label><input type="text" id="nc-statut" placeholder="Ex. Responsable Qualité"></div>
+      </div>
+      <div class="field"><label>Nom et Prénom</label><input type="text" id="nc-nom"></div>
+      <div class="band">DESCRIPTION DE LA NON-CONFORMITÉ</div>
+      <div class="field"><label>Nature <span class="hint">(cochez la ou les cases)</span></label></div>
+      <div class="checks" id="nc-natures">
+        <label><input type="checkbox" data-label="Réglementaire"> Réglementaire</label>
+        <label><input type="checkbox" data-label="Documentaire"> Documentaire</label>
+        <label><input type="checkbox" data-label="Applicative"> Applicative</label>
+      </div>
+      <div class="field"><label>Processus concerné <span class="hint">(cochez une ou plusieurs)</span></label></div>
+      <div class="checks" id="nc-processus">
+        <label><input type="checkbox" data-label="Management Général"> Management Général</label>
+        <label><input type="checkbox" data-label="Développement commercial"> Développement commercial</label>
+        <label><input type="checkbox" data-label="Secrétariat Général"> Secrétariat Général</label>
+        <label><input type="checkbox" data-label="Marketing"> Marketing</label>
+        <label><input type="checkbox" data-label="Qualité"> Qualité</label>
+        <label><input type="checkbox" data-label="Ressources humaines"> Ressources humaines</label>
+        <label><input type="checkbox" data-label="Trésorerie"> Trésorerie</label>
+        <label><input type="checkbox" data-label="Formations"> Formations</label>
+        <label><input type="checkbox" data-label="Projet"> Projet</label>
+        <label><input type="checkbox" data-label="Responsabilité Socio-économique"> Responsabilité Socio-économique</label>
+        <label><input type="checkbox" data-label="International"> International</label>
+      </div>
+      <div class="field"><label>Comment la NC a été détectée ?</label><textarea id="nc-detection"></textarea></div>
+      <div class="field"><label>Description détaillée</label><textarea id="nc-description"></textarea></div>
+      <div class="band">ACTIONS CORRECTIVES IMMÉDIATES</div>
+      <div class="row2">
+        <div class="field"><label>Action immédiate ?</label>
+          <select id="nc-actionimm"><option value=""></option><option>Oui</option><option>Non</option></select>
+        </div>
+        <div class="field"><label>NC clôturée ?</label>
+          <select id="nc-cloturee"><option value=""></option><option>Oui</option><option>Non</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Description de l'action immédiate</label><textarea id="nc-descactionimm"></textarea></div>
+      <div class="band">RÉPONSE À LA NON-CONFORMITÉ</div>
+      <div class="field"><label>Action corrective</label><textarea id="nc-actioncorrective"></textarea></div>
+      <div class="field"><label>Méthodologie de suivi</label><textarea id="nc-methodologie"></textarea></div>
+      <div class="row2">
+        <div class="field"><label>Échéance</label><input type="date" id="nc-echeance"></div>
+        <div class="field"><label>Date de clôture</label><input type="date" id="nc-datecloture"></div>
+      </div>
+      <button class="btn btn-ok" id="nc-submit">✅ Enregistrer la fiche</button>
+    </div>
+
+    <!-- Registre NC -->
+    <div class="card">
+      <div class="band" id="nc-reg-title">REGISTRE DES NON-CONFORMITÉS</div>
+      <div id="nc-notice"></div>
+      <div class="tw"><table id="nc-table"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ── RÉCLAMATIONS ── -->
+  <section class="panel" id="panel-recl">
+
+    <!-- Formulaire — uniquement pour utilisateur -->
+    <div class="card" id="recl-form-card">
+      <div class="band">INFORMATIONS GÉNÉRALES</div>
+      <div class="row2">
+        <div class="field"><label>Date de réception *</label><input type="date" id="rc-date"></div>
+        <div class="field"><label>Canal</label>
+          <select id="rc-canal"><option value=""></option><option>Email</option><option>Téléphone</option><option>Formulaire en ligne</option><option>En personne</option><option>Réseaux sociaux</option><option>Autre</option></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Nom du client / partie prenante</label><input type="text" id="rc-nom"></div>
+        <div class="field"><label>Coordonnées</label><input type="text" id="rc-contact"></div>
+      </div>
+      <div class="band">DESCRIPTION DE LA RÉCLAMATION</div>
+      <div class="row2">
+        <div class="field"><label>Nature</label>
+          <select id="rc-nature"><option value=""></option><option>Qualité du service / projet</option><option>Délai</option><option>Comportement / communication</option><option>Facturation</option><option>Autre</option></select>
+        </div>
+        <div class="field"><label>Gravité</label>
+          <select id="rc-gravite"><option value=""></option><option>Faible</option><option>Moyenne</option><option>Élevée</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Processus / Service concerné</label>
+        <select id="rc-processus"><option value=""></option>
+          <option>Management Général</option><option>Développement commercial</option><option>Secrétariat Général</option>
+          <option>Marketing</option><option>Qualité</option><option>Ressources humaines</option><option>Trésorerie</option>
+          <option>Formations</option><option>Projet</option><option>Responsabilité Socio-économique</option><option>International</option>
+        </select>
+      </div>
+      <div class="field"><label>Description détaillée</label><textarea id="rc-description"></textarea></div>
+      <div class="band">TRAITEMENT</div>
+      <div class="row2">
+        <div class="field"><label>Action immédiate ?</label>
+          <select id="rc-actionimm"><option value=""></option><option>Oui</option><option>Non</option></select>
+        </div>
+        <div class="field"><label>Responsable du traitement</label><input type="text" id="rc-responsable"></div>
+      </div>
+      <div class="field"><label>Description de l'action immédiate</label><textarea id="rc-descactionimm"></textarea></div>
+      <div class="field"><label>Action corrective</label><textarea id="rc-actioncorrective"></textarea></div>
+      <div class="row2">
+        <div class="field"><label>Statut</label>
+          <select id="rc-statut"><option>Ouvert</option><option>En cours</option><option>Clôturé</option><option>Annulé</option></select>
+        </div>
+        <div class="field"><label>Date de clôture</label><input type="date" id="rc-datecloture"></div>
+      </div>
+      <div class="field"><label>Satisfaction client</label>
+        <select id="rc-satisfaction"><option value=""></option><option>Satisfait</option><option>Partiellement satisfait</option><option>Insatisfait</option><option>Non évalué</option></select>
+      </div>
+      <button class="btn btn-ok" id="rc-submit">✅ Enregistrer la réclamation</button>
+    </div>
+
+    <!-- Registre réclamations -->
+    <div class="card">
+      <div class="band" id="rc-reg-title">REGISTRE DES RÉCLAMATIONS</div>
+      <div id="rc-notice"></div>
+      <div class="tw"><table id="rc-table"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ── REGISTRE ACTIONS (ADMIN) ── -->
+  <section class="panel" id="panel-act">
+    <div class="card">
+      <div class="notice gold">
+        <span class="nbadge g">ADMIN</span>
+        Seul l'administrateur peut créer et gérer les actions d'amélioration.
+      </div>
+      <p class="desc">Consolidez ici toutes les actions d'amélioration issues de toutes les sources : audits, réclamations, non-conformités, KPI, retours parties prenantes.</p>
+      <button class="btn" id="act-toggle">+ Nouvelle action d'amélioration</button>
+      <div class="addbox" id="act-form" style="display:none;">
+        <div class="row2">
+          <div class="field"><label>Date d'ouverture *</label><input type="date" id="act-date"></div>
+          <div class="field"><label>Source</label>
+            <select id="act-source"><option value=""></option><option>Audit</option><option>Réclamation client</option><option>Non-conformité</option><option>Indicateur KPI</option><option>Retour partie prenante</option><option>Autre</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Référence source <span class="hint">ex. FNC-001 ou RECL-002</span></label><input type="text" id="act-reference"></div>
+        <div class="field"><label>Constat / Problème identifié</label><textarea id="act-constat"></textarea></div>
+        <div class="field"><label>Action d'amélioration proposée</label><textarea id="act-action"></textarea></div>
+        <div class="row2">
+          <div class="field"><label>Responsable</label><input type="text" id="act-responsable"></div>
+          <div class="field"><label>Échéance</label><input type="date" id="act-echeance"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Priorité</label>
+            <select id="act-priorite"><option value=""></option><option>Faible</option><option>Moyenne</option><option>Élevée</option></select>
+          </div>
+          <div class="field"><label>Statut</label>
+            <select id="act-statut"><option>Ouvert</option><option>En cours</option><option>Clôturé</option><option>Annulé</option></select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Date de clôture</label><input type="date" id="act-datecloture"></div>
+          <div class="field"><label>Efficacité vérifiée</label>
+            <select id="act-efficacite"><option value=""></option><option>Oui</option><option>Non</option><option>En attente</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Commentaires</label><textarea id="act-commentaires"></textarea></div>
+        <button class="btn btn-ok" id="act-submit">✅ Ajouter au registre</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="band gold">REGISTRE CENTRALISÉ DES ACTIONS D'AMÉLIORATION</div>
+      <div class="tw"><table id="act-table"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+// ══ CONFIG ══
+var API = "http://localhost:3000";
+var S   = { role:null, name:null, pass:null };
+var DATA= { nc:[], recl:[], act:[] };
+var selR= "user";
+
+function getAPI(){ return (document.getElementById("api-url").value||"http://localhost:3000").replace(/\/$/,""); }
+
+// ══ API ══
+function hdrs(){
+  var h={"Content-Type":"application/json","x-user":S.name||""};
+  if(S.role==="admin") h["x-admin-password"]=S.pass;
+  return h;
+}
+async function GET(p){ var r=await fetch(getAPI()+p,{headers:hdrs()}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function POST(p,b){ var r=await fetch(getAPI()+p,{method:"POST",headers:hdrs(),body:JSON.stringify(b)}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function PATCH(p,b){ var r=await fetch(getAPI()+p,{method:"PATCH",headers:hdrs(),body:JSON.stringify(b)}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function DEL(p){ var r=await fetch(getAPI()+p,{method:"DELETE",headers:hdrs()}); if(!r.ok) throw new Error(r.status); return r.json(); }
+
+// ══ SERVER TEST ══
+window.testSrv=async function(){
+  var el=document.getElementById("srv-st");
+  el.textContent="…"; el.className="";
+  try{
+    var r=await fetch(getAPI()+"/api/ping");
+    var d=await r.json();
+    el.textContent=d.ok?"✅ Connecté":"❌ Réponse inattendue";
+    el.className=d.ok?"ok":"err";
+  }catch(e){ el.textContent="❌ Serveur inaccessible"; el.className="err"; }
+};
+
+// ══ OVERLAY ══
+function show(m){ document.getElementById("ov-msg").textContent=m||"Chargement..."; document.getElementById("overlay").classList.remove("hidden"); }
+function hide(){ document.getElementById("overlay").classList.add("hidden"); }
+
+// ══ TOAST ══
+var tt;
+function toast(m,err){
+  var t=document.getElementById("toast");
+  t.textContent=m; t.className=err?"show err":"show";
+  clearTimeout(tt); tt=setTimeout(function(){ t.className=""; },2800);
+}
+
+// ══ TABS ══
+function setTab(n){
+  if(n==="act"&&S.role!=="admin"){ toast("⚠️ Réservé aux administrateurs.",true); return; }
+  document.querySelectorAll("nav.tabs button").forEach(function(b){ b.classList.toggle("active",b.dataset.tab===n); });
+  document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active",p.id==="panel-"+n); });
+}
+document.querySelectorAll("nav.tabs button").forEach(function(b){ b.addEventListener("click",function(){ setTab(b.dataset.tab); }); });
+document.querySelectorAll("[data-goto]").forEach(function(a){ a.addEventListener("click",function(e){ e.preventDefault(); setTab(a.dataset.goto); }); });
+
+// ══ AUTH ══
+window.selRole=function(r){
+  selR=r;
+  document.getElementById("rb-user").classList.toggle("sel",r==="user");
+  document.getElementById("rb-admin").classList.toggle("sel",r==="admin");
+  document.getElementById("ap-row").style.display=r==="admin"?"block":"none";
+};
+
+window.doLogin=async function(){
+  var name=document.getElementById("l-name").value.trim();
+  var pass=document.getElementById("l-pass").value;
+  var err=document.getElementById("l-err");
+  err.classList.remove("show");
+  if(!name){ err.textContent="Merci d'entrer votre nom."; err.classList.add("show"); return; }
+  show("Connexion...");
+  try{
+    var ping=await fetch(getAPI()+"/api/ping").catch(function(){return null;});
+    if(!ping||!ping.ok){ hide(); err.textContent="Impossible de joindre le serveur."; err.classList.add("show"); return; }
+    if(selR==="admin"){
+      var auth=await POST("/api/auth",{password:pass});
+      if(auth.role!=="admin"){ hide(); err.textContent="Mot de passe incorrect."; err.classList.add("show"); return; }
+      S.pass=pass;
+    }
+    S.role=selR; S.name=name;
+    document.getElementById("login-screen").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("b-name").textContent=name;
+    var rt=document.getElementById("b-role");
+    rt.textContent=selR==="admin"?"ADMIN":"UTILISATEUR";
+    rt.className=selR==="admin"?"rtag":"rtag u";
+    applyRole();
+    await loadAll();
+  }catch(e){ err.textContent="Erreur : "+e.message; err.classList.add("show"); }
+  finally{ hide(); }
+};
+
+window.doLogout=function(){
+  S={role:null,name:null,pass:null}; DATA={nc:[],recl:[],act:[]};
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("l-name").value="";
+  document.getElementById("l-pass").value="";
+  document.getElementById("l-err").classList.remove("show");
+  selRole("user");
+};
+
+function applyRole(){
+  var adm=S.role==="admin";
+
+  // Onglet actions : admin seulement
+  document.getElementById("tab-act").style.display=adm?"":"none";
+
+  // Formulaires : cachés pour admin
+  document.getElementById("nc-form-card").style.display=adm?"none":"block";
+  document.getElementById("recl-form-card").style.display=adm?"none":"block";
+
+  // KPIs : admin seulement
+  document.getElementById("kpis").style.display=adm?"grid":"none";
+  document.getElementById("export-row").style.display=adm?"":"none";
+
+  // Titres registres
+  document.getElementById("nc-reg-title").textContent=adm?"REGISTRE DES NON-CONFORMITÉS":"MES NON-CONFORMITÉS";
+  document.getElementById("rc-reg-title").textContent=adm?"REGISTRE DES RÉCLAMATIONS":"MES RÉCLAMATIONS";
+
+  // Notices
+  if(adm){
+    document.getElementById("nc-notice").innerHTML="<div class='notice gold'><span class='nbadge g'>ADMIN</span>Vue complète — vous pouvez modifier les statuts et supprimer.</div>";
+    document.getElementById("rc-notice").innerHTML="<div class='notice gold'><span class='nbadge g'>ADMIN</span>Vue complète — vous pouvez modifier les statuts et supprimer.</div>";
+  } else {
+    document.getElementById("nc-notice").innerHTML="<div class='notice blue'><span class='nbadge b'>FILTRE</span>Vous voyez uniquement vos propres fiches.</div>";
+    document.getElementById("rc-notice").innerHTML="<div class='notice blue'><span class='nbadge b'>FILTRE</span>Vous voyez uniquement vos propres réclamations.</div>";
+  }
+
+  // Description accueil
+  document.getElementById("accueil-desc").textContent=adm
+    ? "Vue administrateur — accès complet aux registres NC et Réclamations, et gestion des actions d'amélioration."
+    : "Bienvenue. Vous pouvez soumettre une non-conformité ou une réclamation et consulter vos propres soumissions.";
+
+  // Liens rapides
+  var ql=document.getElementById("quick-links");
+  if(adm){
+    ql.innerHTML=
+      "<a href='#' data-goto='nc'>➜ Registre des non-conformités <span class='d'>vue complète</span></a>"+
+      "<a href='#' data-goto='recl'>➜ Registre des réclamations <span class='d'>vue complète</span></a>"+
+      "<a href='#' data-goto='act'>➜ Registre des actions d'amélioration <span class='d'>créer & gérer</span></a>";
+  } else {
+    ql.innerHTML=
+      "<a href='#' data-goto='nc'>➜ Soumettre une non-conformité <span class='d'>formulaire à remplir</span></a>"+
+      "<a href='#' data-goto='recl'>➜ Soumettre une réclamation <span class='d'>client / partie prenante</span></a>";
+  }
+  document.querySelectorAll("[data-goto]").forEach(function(a){ a.addEventListener("click",function(e){ e.preventDefault(); setTab(a.dataset.goto); }); });
+}
+
+// ══ LOAD ══
+async function loadAll(){
+  show("Chargement des données...");
+  try{
+    DATA.nc   = await GET("/api/nc");
+    DATA.recl = await GET("/api/recl");
+    if(S.role==="admin") DATA.act = await GET("/api/act");
+    renderNC(); renderRC();
+    if(S.role==="admin"){ renderACT(); renderDashboard(); }
+  }catch(e){ toast("⚠️ Erreur chargement : "+e.message,true); }
+  finally{ hide(); }
+}
+
+// ══ UTILS ══
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmt(iso){ if(!iso) return ""; var p=iso.split("-"); return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:iso; }
+function esc(s){ if(s==null) return ""; return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function late(e,s){ if(!e) return false; if(s==="Clôturé"||s==="Annulé") return false; return e<today(); }
+function val(id){ return document.getElementById(id).value.trim(); }
+function chk(cid){ var o=[]; document.querySelectorAll("#"+cid+" input:checked").forEach(function(c){ o.push(c.dataset.label); }); return o; }
+function clrChk(cid){ document.querySelectorAll("#"+cid+" input").forEach(function(c){ c.checked=false; }); }
+function clrF(ids){ ids.forEach(function(id){ var e=document.getElementById(id); if(e) e.value=""; }); }
+
+function stSelect(scope,id,cur,editable){
+  var opts=["Ouvert","En cours","Clôturé","Annulé"];
+  if(!editable) return "<span class='bs st-"+(cur||"Ouvert").replace(" ","-")+"'>"+esc(cur||"Ouvert")+"</span>";
+  return "<select class='bs st-"+(cur||"Ouvert").replace(" ","-")+"' data-ss-"+scope+"='"+esc(id)+"'>"+
+    opts.map(function(o){return"<option"+(o===cur?" selected":"")+">"+o+"</option>";}).join("")+"</select>";
+}
+function bindSS(scope){
+  document.querySelectorAll("[data-ss-"+scope+"]").forEach(function(sel){
+    sel.addEventListener("change",async function(){
+      var id=sel.getAttribute("data-ss-"+scope);
+      try{
+        await PATCH("/api/"+scope+"/"+id,{statut:sel.value});
+        var arr=scope==="nc"?DATA.nc:(scope==="recl"?DATA.recl:DATA.act);
+        var rec=arr.find(function(x){return x.id===id;});
+        if(rec) rec.statut=sel.value;
+        sel.className="bs st-"+sel.value.replace(" ","-");
+        renderDashboard();
+        toast("✅ Statut mis à jour.");
+      }catch(e){ toast("❌ Erreur : "+e.message,true); }
+    });
+  });
+}
+function bindDel(scope){
+  document.querySelectorAll("[data-del-"+scope+"]").forEach(function(btn){
+    btn.addEventListener("click",async function(){
+      var id=btn.getAttribute("data-del-"+scope);
+      if(!confirm("Supprimer "+id+" ?")) return;
+      try{
+        await DEL("/api/"+scope+"/"+id);
+        if(scope==="nc"){ DATA.nc=DATA.nc.filter(function(x){return x.id!==id;}); renderNC(); }
+        else if(scope==="recl"){ DATA.recl=DATA.recl.filter(function(x){return x.id!==id;}); renderRC(); }
+        else{ DATA.act=DATA.act.filter(function(x){return x.id!==id;}); renderACT(); }
+        renderDashboard(); toast("🗑 Supprimé.");
+      }catch(e){ toast("❌ Erreur : "+e.message,true); }
+    });
+  });
+}
+
+// ══ NON-CONFORMITÉS ══
+var ncF=["nc-date","nc-statut","nc-nom","nc-detection","nc-description","nc-actionimm","nc-cloturee","nc-descactionimm","nc-actioncorrective","nc-methodologie","nc-echeance","nc-datecloture"];
+function renderNC(){
+  var adm=S.role==="admin";
+  document.querySelector("#nc-table thead").innerHTML="<tr>"+["N°","Date","Nom","Nature","Processus","Statut","Échéance","Clôture",""].map(function(c){return"<th>"+c+"</th>";}).join("")+"</tr>";
+  var tb=document.querySelector("#nc-table tbody");
+  if(!DATA.nc.length){ tb.innerHTML="<tr><td colspan='9' class='empty'>Aucune non-conformité"+(adm?"":" à votre nom")+".</td></tr>"; return; }
+  tb.innerHTML=DATA.nc.map(function(r){
+    var mine=r.submittedBy===S.name;
+    var del=adm?"<td><button class='db' data-del-nc='"+esc(r.id)+"'>🗑</button></td>":"<td></td>";
+    return "<tr"+(mine&&!adm?" class='row-mine'":"")+">"+
+      "<td>"+esc(r.id)+"</td><td>"+esc(fmt(r.date))+"</td><td>"+esc(r.nom||r.submittedBy)+"</td>"+
+      "<td>"+esc(r.natures)+"</td><td>"+esc(r.processus)+"</td>"+
+      "<td>"+stSelect("nc",r.id,r.statut,adm)+"</td>"+
+      "<td>"+esc(fmt(r.echeance))+"</td><td>"+esc(fmt(r.dateCloture))+"</td>"+del+"</tr>";
+  }).join("");
+  if(adm){ bindSS("nc"); bindDel("nc"); }
+}
+document.getElementById("nc-submit").addEventListener("click",async function(){
+  if(!val("nc-date")){ toast("⚠️ Date obligatoire.",true); return; }
+  var btn=this; btn.disabled=true; btn.textContent="⏳ Enregistrement...";
+  try{
+    var saved=await POST("/api/nc",{
+      date:val("nc-date"), nom:val("nc-nom")||S.name, chargeStatut:val("nc-statut"),
+      natures:chk("nc-natures").join("; "), processus:chk("nc-processus").join("; "),
+      detection:val("nc-detection"), description:val("nc-description"),
+      actionImm:val("nc-actionimm"), descActionImm:val("nc-descactionimm"),
+      actionCorrective:val("nc-actioncorrective"), methodologie:val("nc-methodologie"),
+      echeance:val("nc-echeance"), dateCloture:val("nc-datecloture"),
+      statut:val("nc-cloturee")==="Oui"?"Clôturé":"Ouvert", submittedBy:S.name
+    });
+    DATA.nc.unshift(saved);
+    clrF(ncF); clrChk("nc-natures"); clrChk("nc-processus");
+    renderNC(); toast("✅ Fiche enregistrée ("+saved.id+").");
+  }catch(e){ toast("❌ Erreur : "+e.message,true); }
+  finally{ btn.disabled=false; btn.textContent="✅ Enregistrer la fiche"; }
+});
+
+// ══ RÉCLAMATIONS ══
+var rcF=["rc-date","rc-nom","rc-contact","rc-canal","rc-nature","rc-processus","rc-gravite","rc-description","rc-actionimm","rc-descactionimm","rc-responsable","rc-actioncorrective","rc-datecloture","rc-satisfaction"];
+function renderRC(){
+  var adm=S.role==="admin";
+  document.querySelector("#rc-table thead").innerHTML="<tr>"+["N°","Date","Client","Nature","Gravité","Statut","Clôture","Satisfaction",""].map(function(c){return"<th>"+c+"</th>";}).join("")+"</tr>";
+  var tb=document.querySelector("#rc-table tbody");
+  if(!DATA.recl.length){ tb.innerHTML="<tr><td colspan='9' class='empty'>Aucune réclamation"+(adm?"":" à votre nom")+".</td></tr>"; return; }
+  tb.innerHTML=DATA.recl.map(function(r){
+    var mine=r.submittedBy===S.name;
+    var del=adm?"<td><button class='db' data-del-recl='"+esc(r.id)+"'>🗑</button></td>":"<td></td>";
+    return "<tr"+(mine&&!adm?" class='row-mine'":"")+">"+
+      "<td>"+esc(r.id)+"</td><td>"+esc(fmt(r.date))+"</td><td>"+esc(r.nom)+"</td>"+
+      "<td>"+esc(r.nature)+"</td><td>"+esc(r.gravite)+"</td>"+
+      "<td>"+stSelect("recl",r.id,r.statut,adm)+"</td>"+
+      "<td>"+esc(fmt(r.dateCloture))+"</td><td>"+esc(r.satisfaction)+"</td>"+del+"</tr>";
+  }).join("");
+  if(adm){ bindSS("recl"); bindDel("recl"); }
+}
+document.getElementById("rc-submit").addEventListener("click",async function(){
+  if(!val("rc-date")){ toast("⚠️ Date obligatoire.",true); return; }
+  var btn=this; btn.disabled=true; btn.textContent="⏳ Enregistrement...";
+  try{
+    var saved=await POST("/api/recl",{
+      date:val("rc-date"), nom:val("rc-nom")||S.name, contact:val("rc-contact"),
+      canal:val("rc-canal"), nature:val("rc-nature"), processus:val("rc-processus"),
+      gravite:val("rc-gravite"), description:val("rc-description"),
+      actionImm:val("rc-actionimm"), descActionImm:val("rc-descactionimm"),
+      responsable:val("rc-responsable"), actionCorrective:val("rc-actioncorrective"),
+      statut:val("rc-statut")||"Ouvert", dateCloture:val("rc-datecloture"),
+      satisfaction:val("rc-satisfaction"), submittedBy:S.name
+    });
+    DATA.recl.unshift(saved);
+    clrF(rcF); document.getElementById("rc-statut").value="Ouvert";
+    renderRC(); toast("✅ Réclamation enregistrée ("+saved.id+").");
+  }catch(e){ toast("❌ Erreur : "+e.message,true); }
+  finally{ btn.disabled=false; btn.textContent="✅ Enregistrer la réclamation"; }
+});
+
+// ══ ACTIONS (ADMIN) ══
+var actF=["act-date","act-source","act-reference","act-constat","act-action","act-responsable","act-echeance","act-priorite","act-datecloture","act-efficacite","act-commentaires"];
+document.getElementById("act-toggle").addEventListener("click",function(){
+  var b=document.getElementById("act-form"); b.style.display=b.style.display==="none"?"block":"none";
+});
+function renderACT(){
+  document.querySelector("#act-table thead").innerHTML="<tr>"+["N°","Date","Source","Référence","Constat","Responsable","Échéance","Priorité","Statut","Retard",""].map(function(c){return"<th>"+c+"</th>";}).join("")+"</tr>";
+  var tb=document.querySelector("#act-table tbody");
+  if(!DATA.act.length){ tb.innerHTML="<tr><td colspan='11' class='empty'>Aucune action enregistrée.</td></tr>"; return; }
+  tb.innerHTML=DATA.act.map(function(r){
+    return "<tr>"+
+      "<td>"+esc(r.id)+"</td><td>"+esc(fmt(r.date))+"</td><td>"+esc(r.source)+"</td>"+
+      "<td>"+esc(r.reference)+"</td><td>"+esc(r.constat)+"</td><td>"+esc(r.responsable)+"</td>"+
+      "<td>"+esc(fmt(r.echeance))+"</td><td>"+esc(r.priorite)+"</td>"+
+      "<td>"+stSelect("act",r.id,r.statut,true)+"</td>"+
+      "<td>"+(late(r.echeance,r.statut)?"<b style='color:#c00'>⚠️ En retard</b>":"")+"</td>"+
+      "<td><button class='db' data-del-act='"+esc(r.id)+"'>🗑</button></td></tr>";
+  }).join("");
+  bindSS("act"); bindDel("act");
+}
+document.getElementById("act-submit").addEventListener("click",async function(){
+  if(!val("act-date")){ toast("⚠️ Date obligatoire.",true); return; }
+  var btn=this; btn.disabled=true; btn.textContent="⏳ Enregistrement...";
+  try{
+    var saved=await POST("/api/act",{
+      date:val("act-date"), source:val("act-source"), reference:val("act-reference"),
+      constat:val("act-constat"), action:val("act-action"), responsable:val("act-responsable"),
+      echeance:val("act-echeance"), priorite:val("act-priorite"),
+      statut:val("act-statut")||"Ouvert", dateCloture:val("act-datecloture"),
+      efficacite:val("act-efficacite"), commentaires:val("act-commentaires"), submittedBy:S.name
+    });
+    DATA.act.unshift(saved);
+    clrF(actF); document.getElementById("act-statut").value="Ouvert";
+    document.getElementById("act-form").style.display="none";
+    renderACT(); renderDashboard(); toast("✅ Action ajoutée ("+saved.id+").");
+  }catch(e){ toast("❌ Erreur : "+e.message,true); }
+  finally{ btn.disabled=false; btn.textContent="✅ Ajouter au registre"; }
+});
+
+// ══ DASHBOARD ══
+function renderDashboard(){
+  if(S.role!=="admin") return;
+  function op(a){ return a.filter(function(r){return r.statut==="Ouvert"||r.statut==="En cours";}).length; }
+  document.getElementById("kpi-nc").textContent=op(DATA.nc);
+  document.getElementById("kpi-recl").textContent=op(DATA.recl);
+  document.getElementById("kpi-act").textContent=op(DATA.act);
+  document.getElementById("kpi-late").textContent=DATA.act.filter(function(r){return late(r.echeance,r.statut);}).length;
+}
+
+// ══ EXPORT ══
+document.getElementById("export-btn").addEventListener("click",async function(){
+  if(typeof XLSX==="undefined"){ toast("⚠️ XLSX indisponible.",true); return; }
+  show("Préparation export...");
+  try{
+    var nc=await GET("/api/nc"), recl=await GET("/api/recl"), act=await GET("/api/act");
+    var wb=XLSX.utils.book_new();
+    var toSheet=function(rows){ return XLSX.utils.json_to_sheet(rows); };
+    wb.SheetNames.push("Non-Conformités"); wb.Sheets["Non-Conformités"]=toSheet(nc.map(function(r){return{"N°":r.id,"Date":fmt(r.date),"Soumis par":r.submittedBy,"Nom":r.nom,"Nature":r.natures,"Processus":r.processus,"Statut":r.statut,"Échéance":fmt(r.echeance)};}));
+    wb.SheetNames.push("Réclamations"); wb.Sheets["Réclamations"]=toSheet(recl.map(function(r){return{"N°":r.id,"Date":fmt(r.date),"Soumis par":r.submittedBy,"Client":r.nom,"Nature":r.nature,"Gravité":r.gravite,"Statut":r.statut,"Satisfaction":r.satisfaction};}));
+    wb.SheetNames.push("Actions"); wb.Sheets["Actions"]=toSheet(act.map(function(r){return{"N°":r.id,"Date":fmt(r.date),"Source":r.source,"Référence":r.reference,"Constat":r.constat,"Responsable":r.responsable,"Échéance":fmt(r.echeance),"Statut":r.statut};}));
+    XLSX.writeFile(wb,"Export_Qualite_ENSIT_JE.xlsx");
+    toast("⭳ Export généré.");
+  }catch(e){ toast("❌ Erreur export : "+e.message,true); }
+  finally{ hide(); }
+});
+
+})();
+</script>
+</body>
+</html>
