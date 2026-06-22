@@ -15,12 +15,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);}
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--maroon-dark),var(--maroon) 60%,#a8324a);padding:20px;}
-.lbox{background:#fff;border-radius:16px;padding:38px 34px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.lbox{background:#fff;border-radius:16px;padding:42px 40px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .llogo{text-align:center;margin-bottom:26px;}
 .llogo .emb{width:62px;height:62px;background:var(--maroon);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:27px;}
 .llogo h1{color:var(--maroon);font-size:19px;font-weight:800;}
 .llogo p{color:var(--muted);font-size:12px;margin-top:3px;font-style:italic;}
-.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.roles{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px;}
 .rb{border:2px solid var(--line);background:#fff;border-radius:10px;padding:13px 8px;cursor:pointer;text-align:center;transition:.15s;}
 .rb:hover,.rb.sel{border-color:var(--maroon);background:var(--maroon-light);}
 .rb .ri{font-size:25px;margin-bottom:4px;}.rb .rl{font-size:13px;font-weight:700;}.rb .rd{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -99,7 +99,7 @@ tbody tr:hover{background:#f7f2f3;}
 .nbadge.b{background:var(--blue);color:#fff;}.nbadge.g{background:var(--gold);color:#333;}
 .row-mine{background:#f0f7ff !important;}
 .toolbar{display:flex;justify-content:flex-end;margin:-6px 0 10px;}
-@media(max-width:600px){.row2,.checks,.kpis,.roles{grid-template-columns:1fr;}.banner{flex-direction:column;align-items:flex-start;}}
+@media(max-width:600px){.row2,.checks,.kpis{grid-template-columns:1fr;}.roles{grid-template-columns:1fr 1fr;}.banner{flex-direction:column;align-items:flex-start;}}
 </style>
 </head>
 <body>
@@ -113,7 +113,7 @@ tbody tr:hover{background:#f7f2f3;}
       <h1>OUTIL DE GESTION QUALITÉ</h1>
       <p>ENSIT Junior Entreprise</p>
     </div>
-    <div class="roles" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="roles">
       <div class="rb sel" id="rb-recl" onclick="selRole('user-recl')">
         <div class="ri">📣</div><div class="rl">Membre</div>
         <div class="rd">Réclamations</div>
@@ -126,11 +126,13 @@ tbody tr:hover{background:#f7f2f3;}
         <div class="ri">🛡️</div><div class="rl">Admin</div>
         <div class="rd">Registres & Actions</div>
       </div>
+      <div class="rb" id="rb-client" onclick="selRole('client')">
+        <div class="ri">🤝</div><div class="rl">Clients</div>
+        <div class="rd">Réclamations</div>
+      </div>
     </div>
     <div class="lf"><label>Votre Nom et Prénom *</label>
-      <select id="l-name" style="width:100%;padding:10px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:14px;font-family:inherit;">
-        <option value="">— Sélectionnez votre nom —</option>
-      </select>
+      <input type="text" id="l-name" placeholder="Saisissez votre nom et prénom" autocomplete="off">
     </div>
     <div id="ap-row" class="lf"><label>Mot de passe administrateur *</label><input type="password" id="l-pass"></div>
     <div class="lerr" id="l-err"></div>
@@ -208,8 +210,10 @@ tbody tr:hover{background:#f7f2f3;}
         <label><input type="checkbox" data-label="Trésorerie"> Trésorerie</label>
         <label><input type="checkbox" data-label="Formations"> Formations</label>
         <label><input type="checkbox" data-label="Projet"> Projet</label>
-        <label><input type="checkbox" data-label="Responsabilité Socio-économique"> Responsabilité Socio-économique</label>
+        <label><input type="checkbox" data-label="RSE"> RSE</label>
         <label><input type="checkbox" data-label="International"> International</label>
+        <label><input type="checkbox" data-label="InterJE"> InterJE</label>
+        <label><input type="checkbox" data-label="Evenmentiel"> Evenmentiel</label>
       </div>
       <div class="field"><label>Comment détectée ?</label><textarea id="nc-detection"></textarea></div>
       <div class="field"><label>Description détaillée</label><textarea id="nc-description"></textarea></div>
@@ -249,7 +253,7 @@ tbody tr:hover{background:#f7f2f3;}
         </div>
       </div>
       <div class="row2">
-        <div class="field"><label>Nom du client</label><input type="text" id="rc-nom"></div>
+        <div class="field"><label>Nom et Prénom</label><input type="text" id="rc-nom"></div>
         <div class="field"><label>Coordonnées</label><input type="text" id="rc-contact"></div>
       </div>
       <div class="band">DESCRIPTION</div>
@@ -260,13 +264,6 @@ tbody tr:hover{background:#f7f2f3;}
         <div class="field"><label>Gravité</label>
           <select id="rc-gravite"><option value=""></option><option>Faible</option><option>Moyenne</option><option>Élevée</option></select>
         </div>
-      </div>
-      <div class="field"><label>Processus concerné</label>
-        <select id="rc-processus"><option value=""></option>
-          <option>Management Général</option><option>Développement commercial</option><option>Secrétariat Général</option>
-          <option>Marketing</option><option>Qualité</option><option>Ressources humaines</option><option>Trésorerie</option>
-          <option>Formations</option><option>Projet</option><option>Responsabilité Socio-économique</option><option>International</option>
-        </select>
       </div>
       <div class="field"><label>Description détaillée</label><textarea id="rc-description"></textarea></div>
       <div class="band">TRAITEMENT</div>
@@ -283,9 +280,6 @@ tbody tr:hover{background:#f7f2f3;}
           <select id="rc-statut"><option>Ouvert</option><option>En cours</option><option>Clôturé</option><option>Annulé</option></select>
         </div>
         <div class="field"><label>Date de clôture</label><input type="date" id="rc-datecloture"></div>
-      </div>
-      <div class="field"><label>Satisfaction client</label>
-        <select id="rc-satisfaction"><option value=""></option><option>Satisfait</option><option>Partiellement satisfait</option><option>Insatisfait</option><option>Non évalué</option></select>
       </div>
       <button class="btn btn-ok" id="rc-submit">✅ Enregistrer la réclamation</button>
     </div>
@@ -432,25 +426,16 @@ const USERS_RECL = [
   "Mohamed Hedi Maaroufi"
 ];
 
-// Populate dropdown based on selected role
-function populateNameDropdown(role) {
-  const sel = document.getElementById("l-name");
-  sel.innerHTML = '<option value="">— Sélectionnez votre nom —</option>';
-  let list = [];
-  if (role === "admin") list = ADMINS;
-  else if (role === "user-full") list = USERS_FULL;
-  else list = [...USERS_RECL, ...USERS_FULL];
-  list.forEach(n => {
-    const o = document.createElement("option");
-    o.value = n; o.textContent = n;
-    sel.appendChild(o);
-  });
+// Normalise un nom pour comparaison (insensible à la casse/accents/espaces superflus)
+function normName(s) {
+  return (s || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
 }
-// init
-populateNameDropdown("user-recl");
+const ADMINS_N      = ADMINS.map(normName);
+const USERS_FULL_N  = USERS_FULL.map(normName);
+
 let SESSION = { role: null, name: null };
 let STATE   = { nc: [], recl: [], act: [] };
-let selR    = "user";
+let selR    = "user-recl";
 
 // ── COUNTER ──────────────────────────────────────────────
 async function nextId(prefix) {
@@ -537,8 +522,9 @@ window.selRole = function(r) {
   document.getElementById("rb-recl").classList.toggle("sel",r==="user-recl");
   document.getElementById("rb-full").classList.toggle("sel",r==="user-full");
   document.getElementById("rb-admin").classList.toggle("sel",r==="admin");
-  document.getElementById("ap-row").style.display=r==="admin"?"block":"none";
-  populateNameDropdown(r);
+  document.getElementById("rb-client").classList.toggle("sel",r==="client");
+  document.getElementById("ap-row").style.display=(r==="admin")?"block":"none";
+  document.getElementById("l-err").classList.remove("show");
 };
 
 window.doLogin = function() {
@@ -546,17 +532,37 @@ window.doLogin = function() {
   const pass=document.getElementById("l-pass").value;
   const err=document.getElementById("l-err");
   err.classList.remove("show");
-  if (!name) { err.textContent="Merci de sélectionner votre nom."; err.classList.add("show"); return; }
+  if (!name) { err.textContent="Merci de saisir votre nom et prénom."; err.classList.add("show"); return; }
   if (selR==="admin"&&pass!==ADMIN_PASS) { err.textContent="Mot de passe incorrect."; err.classList.add("show"); return; }
+
+  const nName = normName(name);
+
+  // Un Responsable ou un Admin ne peut pas se connecter en tant que Membre
+  if (selR==="user-recl" && (ADMINS_N.includes(nName) || USERS_FULL_N.includes(nName))) {
+    err.textContent="Ce nom est enregistré comme Responsable ou Admin. Merci de vous connecter avec le rôle correspondant.";
+    err.classList.add("show");
+    return;
+  }
+
   // Determine effective role
-  const effectiveRole = selR==="admin" ? "admin" : "user";
-  const canNC = selR==="admin" || selR==="user-full";
-  SESSION={role:effectiveRole, name, canNC};
+  let effectiveRole, canNC, isClient=false;
+  if (selR==="admin") {
+    effectiveRole="admin"; canNC=true;
+  } else if (selR==="client") {
+    effectiveRole="user"; canNC=false; isClient=true;
+  } else if (selR==="user-full") {
+    // Les admins sont aussi considérés comme des responsables
+    effectiveRole="user"; canNC=true;
+  } else {
+    effectiveRole="user"; canNC=false;
+  }
+
+  SESSION={role:effectiveRole, name, canNC, isClient};
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").style.display="block";
   document.getElementById("b-name").textContent=name;
   const rt=document.getElementById("b-role");
-  rt.textContent=effectiveRole==="admin"?"ADMIN":canNC?"RESPONSABLE":"MEMBRE";
+  rt.textContent=effectiveRole==="admin"?"ADMIN":isClient?"CLIENT":canNC?"RESPONSABLE":"MEMBRE";
   rt.className=effectiveRole==="admin"?"rtag":"rtag u";
   applyRole();
   // Start realtime listeners
@@ -566,7 +572,7 @@ window.doLogin = function() {
 };
 
 window.doLogout = function() {
-  SESSION={role:null,name:null,canNC:false}; STATE={nc:[],recl:[],act:[]};
+  SESSION={role:null,name:null,canNC:false,isClient:false}; STATE={nc:[],recl:[],act:[]};
   document.getElementById("login-screen").style.display="flex";
   document.getElementById("app").style.display="none";
   document.getElementById("l-name").value="";
@@ -578,6 +584,7 @@ window.doLogout = function() {
 function applyRole() {
   const adm=SESSION.role==="admin";
   const canNC=SESSION.canNC||adm;
+  const isClient=!!SESSION.isClient;
   document.getElementById("tab-act").style.display      =adm?"":"none";
   document.getElementById("nc-form-card").style.display =adm?"none":(canNC?"block":"none");
   document.getElementById("recl-form-card").style.display=adm?"none":"block";
@@ -599,6 +606,8 @@ function applyRole() {
     ?"Vue administrateur — accès complet aux registres NC et Réclamations, gestion des actions d'amélioration."
     :canNC
     ?"Bienvenue. Soumettez une non-conformité ou une réclamation et consultez vos propres soumissions."
+    :isClient
+    ?"Espace client — soumettez une réclamation et consultez vos propres réclamations."
     :"Bienvenue. Soumettez une réclamation et consultez vos propres soumissions.";
   const ql=document.getElementById("quick-links");
   if (adm) {
@@ -638,17 +647,17 @@ document.getElementById("nc-submit").addEventListener("click", async function() 
 });
 
 // ── RENDER RC ────────────────────────────────────────────
-const rcF=["rc-date","rc-nom","rc-contact","rc-canal","rc-nature","rc-processus","rc-gravite","rc-description","rc-actionimm","rc-descactionimm","rc-responsable","rc-actioncorrective","rc-datecloture","rc-satisfaction"];
+const rcF=["rc-date","rc-nom","rc-contact","rc-canal","rc-nature","rc-gravite","rc-description","rc-actionimm","rc-descactionimm","rc-responsable","rc-actioncorrective","rc-datecloture"];
 function renderRC() {
   const adm=SESSION.role==="admin";
   const data=adm?STATE.recl:STATE.recl.filter(r=>r.submittedBy===SESSION.name);
-  document.querySelector("#rc-table thead").innerHTML="<tr>"+["N°","Date","Client","Nature","Gravité","Statut","Clôture","Satisfaction",""].map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  document.querySelector("#rc-table thead").innerHTML="<tr>"+["N°","Date","Nom et Prénom","Nature","Gravité","Statut","Clôture",""].map(c=>`<th>${c}</th>`).join("")+"</tr>";
   const tb=document.querySelector("#rc-table tbody");
-  if (!data.length) { tb.innerHTML=`<tr><td colspan='9' class='empty'>Aucune réclamation${adm?"":" à votre nom"}.</td></tr>`; return; }
+  if (!data.length) { tb.innerHTML=`<tr><td colspan='8' class='empty'>Aucune réclamation${adm?"":" à votre nom"}.</td></tr>`; return; }
   tb.innerHTML=data.map(r=>{
     const mine=r.submittedBy===SESSION.name;
     const del=adm?`<td><button class='db' data-del-recl='${esc(r.id)}'>🗑</button></td>`:"<td></td>";
-    return `<tr${mine&&!adm?" class='row-mine'":""}><td>${esc(r.id)}</td><td>${esc(fmt(r.date))}</td><td>${esc(r.nom)}</td><td>${esc(r.nature)}</td><td>${esc(r.gravite)}</td><td>${stSel("recl",r.id,r.statut,adm)}</td><td>${esc(fmt(r.dateCloture))}</td><td>${esc(r.satisfaction)}</td>${del}</tr>`;
+    return `<tr${mine&&!adm?" class='row-mine'":""}><td>${esc(r.id)}</td><td>${esc(fmt(r.date))}</td><td>${esc(r.nom)}</td><td>${esc(r.nature)}</td><td>${esc(r.gravite)}</td><td>${stSel("recl",r.id,r.statut,adm)}</td><td>${esc(fmt(r.dateCloture))}</td>${del}</tr>`;
   }).join("");
   if (adm) { bindSS("recl"); bindDel("recl"); }
 }
@@ -656,7 +665,7 @@ document.getElementById("rc-submit").addEventListener("click", async function() 
   if (!v("rc-date")) { toast("⚠️ Date obligatoire.",true); return; }
   const btn=this; btn.disabled=true; btn.textContent="⏳ Enregistrement...";
   try {
-    await fbAdd("recl",{date:v("rc-date"),nom:v("rc-nom")||SESSION.name,contact:v("rc-contact"),canal:v("rc-canal"),nature:v("rc-nature"),processus:v("rc-processus"),gravite:v("rc-gravite"),description:v("rc-description"),actionImm:v("rc-actionimm"),descActionImm:v("rc-descactionimm"),responsable:v("rc-responsable"),actionCorrective:v("rc-actioncorrective"),statut:v("rc-statut")||"Ouvert",dateCloture:v("rc-datecloture"),satisfaction:v("rc-satisfaction"),submittedBy:SESSION.name});
+    await fbAdd("recl",{date:v("rc-date"),nom:v("rc-nom")||SESSION.name,contact:v("rc-contact"),canal:v("rc-canal"),nature:v("rc-nature"),gravite:v("rc-gravite"),description:v("rc-description"),actionImm:v("rc-actionimm"),descActionImm:v("rc-descactionimm"),responsable:v("rc-responsable"),actionCorrective:v("rc-actioncorrective"),statut:v("rc-statut")||"Ouvert",dateCloture:v("rc-datecloture"),submittedBy:SESSION.name});
     clrF(rcF); document.getElementById("rc-statut").value="Ouvert";
     toast("✅ Réclamation enregistrée !");
   } catch(e) { toast("❌ Erreur : "+e.message,true); }
@@ -704,7 +713,7 @@ document.getElementById("export-btn").addEventListener("click", ()=>{
     const wb=XLSX.utils.book_new();
     const s=a=>XLSX.utils.json_to_sheet(a);
     wb.SheetNames.push("Non-Conformités"); wb.Sheets["Non-Conformités"]=s(STATE.nc.map(r=>({"N°":r.id,"Date":fmt(r.date),"Soumis par":r.submittedBy,"Nom":r.nom,"Nature":r.natures,"Processus":r.processus,"Statut":r.statut})));
-    wb.SheetNames.push("Réclamations");   wb.Sheets["Réclamations"]=s(STATE.recl.map(r=>({"N°":r.id,"Date":fmt(r.date),"Soumis par":r.submittedBy,"Client":r.nom,"Nature":r.nature,"Gravité":r.gravite,"Statut":r.statut,"Satisfaction":r.satisfaction})));
+    wb.SheetNames.push("Réclamations");   wb.Sheets["Réclamations"]=s(STATE.recl.map(r=>({"N°":r.id,"Date":fmt(r.date),"Soumis par":r.submittedBy,"Nom et Prénom":r.nom,"Nature":r.nature,"Gravité":r.gravite,"Statut":r.statut})));
     wb.SheetNames.push("Actions");        wb.Sheets["Actions"]=s(STATE.act.map(r=>({"N°":r.id,"Date":fmt(r.date),"Source":r.source,"Référence":r.reference,"Constat":r.constat,"Responsable":r.responsable,"Échéance":fmt(r.echeance),"Statut":r.statut})));
     XLSX.writeFile(wb,"Export_Qualite_ENSIT_JE.xlsx");
     toast("⭳ Export généré.");
